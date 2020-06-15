@@ -1,0 +1,78 @@
+---
+- name: Create group {{ tomcat_group }}
+  group:
+    name: "{{ tomcat_group }}"
+    gid: "{{ tomcat_group_gid | default(omit) }}"
+    state: present
+
+- name: Create user {{ tomcat_user }}
+  user:
+    name: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    uid: "{{ tomcat_user_uid | default(omit) }}"
+    state: present
+
+- name: Create temp directory
+  file:
+    path: '{{ tomcat_temp_download_path }}'
+    state: directory
+
+
+- name: Download apache-tomcat-{{ tomcat_version }}.tar.gz
+  get_url:
+    url: https://archive.apache.org/dist/tomcat/tomcat-8/v8.0.37/bin/apache-tomcat-8.0.37.tar.gz
+    dest: '{{ tomcat_temp_download_path }}'
+    timeout: 120
+
+
+- name: Unarchive apache-tomcat-{{ tomcat_version }}.tar.gz at {{ tomcat_install_path }}
+  unarchive:
+    src: "{{ tomcat_temp_download_path }}/apache-tomcat-8.0.37.tar.gz"
+    dest: "{{ tomcat_install_path }}"
+    remote_src: True
+    owner: "{{ tomcat_user }}"
+    group: "{{ tomcat_group }}"
+    creates: "{{ tomcat_install_path }}/apache-tomcat-8.0.37"
+  become: yes
+
+- name: move file tomcat version to file tomcat
+  become: yes 
+  command: mv /opt/apache-tomcat-8.0.37 /opt/tomcat
+  
+- name: Clean up temporary files
+  file:
+    path: '{{ tomcat_temp_download_path }}/apache-tomcat-8.0.37.tar.gz'
+    state: absent
+  changed_when: False
+
+
+
+# configure the tomcat 
+
+
+# Environment setup.
+- name: Set JAVA_HOME if configured.
+  template:
+    src: templates/java_home.sh.j2
+    dest: /etc/profile.d/java_home.sh
+    mode: 0644
+ 
+
+
+
+# Environment setup.
+- name: Auto start file configured.
+  become: yes
+  template:
+    src: templates/tomcat.j2
+    dest: /etc/init.d/tomcat 
+    mode: a+x
+
+- name: update sys link 
+  command: update-rc.d tomcat defaults
+  notify: restart tomcat
+
+
+
+
+

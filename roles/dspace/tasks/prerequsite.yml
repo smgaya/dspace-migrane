@@ -1,0 +1,72 @@
+---
+##
+
+# Common general deps
+- name: deps | Install some needed depenences
+  apt: 
+    pkg: "{{ dspace_dependences }}"
+    state: present 
+    install_recommends: no
+    update_cache: yes
+  become: yes
+  tags: deps
+
+# Select java 1.8 to be default 
+- name: deps | Correct java 1.8 version selected
+  alternatives:
+    name: java
+    path: /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+  tags: deps
+
+# ruby stuff
+- name: install prereqs for the mirage2 responsive theme (official repo)
+  apt: 
+    name: ["ruby-full", "gcc", "make"] 
+    state:  present
+  # become_user: root
+  
+
+- name: set GEM_HOME & GEM_PATH for all users and put the gem executable directory in everyone's PATH
+  template:
+    src: "templates/ruby.sh.j2"
+    dest: "/etc/profile.d/ruby.sh"
+
+
+- name: update rubygems
+  shell: "gem update --system"
+  register: result
+  changed_when: "'Latest version currently installed' not in result.stdout"
+
+- name: install sass & compass
+  gem:
+    name: "{{ item.name }}"
+   # version: "{{ item.version }}"
+    state: present
+    user_install: false
+  with_items:
+    - name: "sass"
+      version: "{{ sass_version }}"
+    - name: "compass"
+      version: "{{ compass_version }}"
+    - name: "oj" # avoid MultiJson warnings about ok_json
+      version: "" # defaults to latest
+
+# node stuff...
+- name: install prereqs for the mirage2 responsive theme (epel repo)
+  apt: 
+    name: ['nodejs', 'npm'] 
+    state:  present 
+  # become_user: root
+
+
+
+- name: update npm
+  shell: "npm update -g npm"
+
+- name: install bower & grunt
+  command: "/usr/bin/npm install -g bower grunt grunt-cli"
+  #global: yes
+  #npm:
+  #  name: ["bower", "grunt", "grunt-cli"] 
+  #  path: /opt/site 
+  #become: true

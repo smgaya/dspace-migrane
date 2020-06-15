@@ -1,0 +1,13 @@
+<VirtualHost *:80>
+   ServerName {{ domain }}
+   # TODO: ServerAlias
+
+  # Redirect "/" "https://{{ domain }}/"
+
+   ProxyPass         /  ajp://{{dspace_ip}}:8009/
+   ProxyPassReverse  /  ajp://{{dspace_ip}}:8009/
+
+   ErrorLog "/var/log/apache2/{{ app_hostname }}-error.log"
+   CustomLog "/var/log/apache2/{{ app_hostname }}-access.log" combined
+ </VirtualHost>
+

@@ -1,0 +1,16 @@
+---
+- hosts: all
+  become: true
+  vars:
+    java_packages:
+      - openjdk-8-jdk
+    tomcat_java_home: "/usr/lib/jvm/java-1.8.0-openjdk-amd64/jre"
+    #ansible_python_interpreter: /usr/bin/python3
+    
+  pre_tasks:
+    - name: Install Python 2 for Ansible
+      raw: bash -c "test -x /usr/bin/python || (apt -qqy update && apt install -qqy python-minimal)"
+      #  become: true
+
+  roles:
+    - dspace

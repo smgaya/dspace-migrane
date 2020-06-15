@@ -1,0 +1,37 @@
+---
+
+#configure apache
+
+- name: httpd | install apache 2
+  apt: 
+    name: "{{ apache_pkg }}" 
+    state:  present
+  tags: htttpd
+  
+
+- name: httpd | disable default site
+  command: a2dissite 000-default
+  tags: httpd
+
+- name: httpd | enable modules
+  command: a2enmod rewrite headers proxy proxy_http expires proxy_ajp 
+  tags: httpd
+
+- name: httpd | copy vhost config
+  template: 
+    src:  templates/dspace.conf.j2 
+    dest: /etc/apache2/sites-available/dspace.conf
+  tags: httpd
+
+- name: httpd | enable dspace site
+  command: a2ensite dspace
+#  args:
+#    chdir: /etc/apache2/sites-available/
+  tags: httpd
+
+
+- name: httpd | restart
+  service: 
+    name: apache2 
+    state:  restarted
+  tags: httpd

@@ -1,0 +1,14 @@
+---
+- name: install certbot
+  yum: name=certbot
+  
+- name: run the challenge
+  command: certbot certonly --noninteractive --agree-tos --email {{ lets_encrypt_email }} --webroot --webroot-path /usr/share/nginx/html --domain {{ inventory_hostname }}
+  args:
+    creates: /etc/letsencrypt/renewal/{{ inventory_hostname }}.conf
+
+- name: schedule cron job for certificate renewal
+  cron:
+    name: renew Lets Encrypt certificate
+    job: "certbot certonly --quiet --webroot --webroot-path /usr/share/nginx/html --noninteractive --post-hook 'systemctl restart nginx' --domain {{ inventory_hostname }}"
+    special_time: daily

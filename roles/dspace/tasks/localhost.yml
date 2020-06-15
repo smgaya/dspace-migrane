@@ -1,0 +1,12 @@
+---
+
+- name: change host to /etc/hosts
+  lineinfile:
+    dest: /etc/hosts
+   # regexp: [ \t]+localhost'
+    line: '{{dspace_ip}} dspace.com dspace'
+    state: present
+
+
+- hostname:
+    name: "{{domain}}"

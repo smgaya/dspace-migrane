@@ -1,0 +1,10 @@
+---
+
+- name: disable current theme
+    replace:
+    dest: /home/mgaya/test.txt
+    regexp:  '<groupId>org.codehaus.mojo</groupId>'
+    replace: '\1<!-- \2 -->'
+
+
+      

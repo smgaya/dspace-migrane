@@ -1,0 +1,116 @@
+---
+
+#dspace installation 
+- name: dspace | create group for dspace 
+  become: yes
+  group: # Empty by default, here we give it some groups
+    name: "{{ dspace_user }}"
+  tags: dspace
+
+
+- name: dspace | Create a login user for 
+  become: yes
+  user:
+    name: "{{ dspace_user }}"
+    password: "{{ dspace_pass }}"
+    group: dspace
+     #- sudo
+    state: present
+    shell: /bin/bash       # Defaults to /bin/bash
+    system: no             # Defaults to no
+    createhome: yes        # Defaults to yes
+    home: /home/dspace  # Defaults to /home/<username>
+  tags: dspace
+   
+- name: dspace | Creates dspace directory
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ dspace_user }}"
+    group: "{{ dspace_user }}"
+    mode: 0775
+  with_items:
+    - /dspace
+    - /dspace/dspace_build
+  tags: dspace
+   
+# download and unarchive dspace package.
+- name: dspace | Download Dspace binaries
+  get_url:
+    url: "{{ dspace_download_server }}"
+    dest: "{{ dspace_base_dir }}"
+  register: bin_files
+# extract downloaded dspace 
+- name: dspace | Extrating the Dspace files
+  unarchive:
+    src: /dspace/dspace_build/dspace-6.3-src-release.tar.gz
+    dest: "{{ dspace_base_dir }}"
+    remote_src: yes
+  tags: dspace
+
+- name: dspace | disapble build-number maven plugin- pom
+  become: yes 
+  template: 
+    src: templates/pom.xml 
+    dest: "{{ dspace_source }}/dspace-api/"
+
+
+- name: dspace | sass version maven plugin- pom
+  become: yes
+  template: 
+    src: templates/mirage2-pom.xml 
+    dest: "{{ dspace_source }}/dspace/modules/xmlui-mirage2/pom.xml"
+
+
+- name: disable current theme
+  replace:
+    dest: "{{ dspace_source }}/dspace/config/xmlui.xconf"
+    regexp: '(^\s*)(<theme name="Atmire.*/>)'
+    replace: '\1<!-- \2 -->'
+
+- name: "enable the {{ theme_name }} theme"
+  lineinfile:
+    dest: "{{ dspace_source }}/dspace/config/xmlui.xconf"
+    insertbefore: '(^\s*)(</themes>)'
+    regexp: "(^\\s*)(<theme name=\"{{ theme_name }}\")"
+    line:   "        <theme name=\"{{ theme_name }}\" regex=\".*\" path=\"{{ theme_path }}/\" />"
+#when: "{{ use_alt_theme }}"
+
+
+#Maven install
+  
+- name: dspace | build using maven
+  command:  "mvn -U clean package -Dmirage2.on=true chdir=/dspace/dspace_build/dspace-6.3-src-release"  
+  tags: dspace
+
+   
+- name: dspace | Simple add EXTENSION pgcrypto;
+  become_user: postgres
+  postgresql_query:
+    db: dspace
+    query: CREATE EXTENSION pgcrypto
+  tags: dspace
+
+
+- name: dspace | perform fresh install  using ant
+  become: yes
+  command:  "ant fresh_install chdir={{ dspace_base_dir }}/dspace-6.3-src-release/dspace/target/dspace-installer"
+  tags: dspace
+
+- name: dspace | copy dspace files to tomcat
+  become: yes
+  command: cp -r /dspace/webapps  /opt/tomcat/
+  tags: dspace
+
+- name: dspace | Give permission 
+  file: 
+    dest: /opt/tomcat/webapps 
+    owner: tomcat 
+    group: tomcat
+    mode: u=rwX,g=rX,o=rX 
+    recurse: yes
+
+- name: create administrator
+  shell: "/dspace/bin/dspace create-administrator -e {{ admin_email }} -f {{ admin_firstname }} -l {{ admin_lastname }} -c {{ admin_language }} -p {{ admin_password }}"
+  become: true

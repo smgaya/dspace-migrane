@@ -1,0 +1,7 @@
+---
+# dspace directories
+
+base_dir: "/dspace"
+dspace_base_dir: "/dspace/dspace_build" 
+dspace_install_dir: /dspace
+apache_server_hostname: repository.example.org

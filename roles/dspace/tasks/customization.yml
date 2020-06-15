@@ -1,0 +1,17 @@
+---
+#customization 
+
+
+- name: brand | logo
+  copy:
+    src: "files/{{ logo }}"
+    dest: "{{ full_theme_path }}/images/logo.png"
+
+
+- name: brand  |additional styles
+  template:
+    src: templates/style.scss.j2
+    dest: "{{ full_theme_path }}/styles/_style.scss"
+
+
+

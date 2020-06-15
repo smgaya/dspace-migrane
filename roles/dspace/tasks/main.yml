@@ -1,0 +1,21 @@
+---
+- include_tasks: prerequsite.yml
+#  tags:
+ #   - deps  
+- include_tasks: postgres.yml
+#  tags:
+ 
+ #   - postgres
+- include_tasks: tomcat.yml
+#  tags:
+ #   - tomcat
+- include_tasks: dspace.yml
+ # tags:
+#    - dspace
+- include_tasks: customization.yml
+ # tags: customize
+
+- include_tasks: apache.yml
+
+- include_tasks: localhost.yml
+  
